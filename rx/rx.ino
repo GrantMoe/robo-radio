@@ -132,9 +132,12 @@ const int ARROW_RT = 8;
 //int pwm_switch_1 = 1500;
 //int pwm_switch_2 = 1500;
 
-int throttle_percent = 0;
+//int throttle_percent = 0;
 //bool forward = true;
-int steering_percent = 0;
+//int steering_percent = 0;
+
+int throttle_pwm = 1500;
+int steering_pwm = 1500;
 
 Servo servo_esc;
 Servo servo_front;
@@ -144,7 +147,11 @@ const int pin_esc = 11;
 const int pin_front = 10;
 const int pin_rear = 9;
 
-bool pressed[8] = {false, false, false, false, false, false, false, false};
+// button pressed boolean
+//int pressed[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+bool isPressed[9] = {false, false, false, false, false, false, false, false, false};
+
+uint8_t len = 0;
 
 /**************************************************************************/
 /*!
@@ -231,111 +238,175 @@ void setup(void)
 /**************************************************************************/
 void loop(void)
 {
+  if (ble.available()) {
+    Serial.println("Available!");
+  
   /* Wait for new data to arrive */
-  uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
-  if (len == 0) return;
-
-  /* Got a packet! */
-  // printHex(packetbuffer, len);
-
-  // Buttons
-  if (packetbuffer[1] == 'B') {
-    uint8_t buttnum = packetbuffer[2] - '0';
-    boolean pressed = packetbuffer[3] - '0';
-//    Serial.print ("Button "); Serial.print(buttnum);
-//      Serial.println(" pressed");
-//
-//    if (pressed) {
-//      pressed[buttnum] = true;
-
-
-      // added PWM processing
-      switch (buttnum) {
-        case BUTTON_1:
-          Serial.println("Steering centered");
-          steering_percent = 0;
-          break;
-        case BUTTON_FORWARD: // 2
-          Serial.println("Forward!");
-          if (moving_reverse) {
-            moving_reverse = false;
-            throttle_percent = 0;
-          } else {
-            moving_forward = true;
-            if (throttle_percent == 0) {
-              throttle_percent = 50;
-            }
-          }
-          break;
-        case BUTTON_3:
-          break;
-        case BUTTON_REVERSE: // 4
-          Serial.println("Reverse!");
-          if (moving_forward) {
-            moving_forward = false;
-            throttle_percent = 0;
-          } else {
-            moving_reverse = true;
-            if (throttle_percent == 0) {
-              throttle_percent = -50;
-            }
-          }
-          break;
-        case ARROW_UP:
-          Serial.println("Throttling up!");
-          if (throttle_percent >= 0) {
-            throttle_percent += 10;
-            if (throttle_percent > 100) {
-              throttle_percent = 100;
-            }
-          } else {
-            throttle_percent -= 10;
-            if (throttle_percent < -100) {
-              throttle_percent = -100;
-            }
-          }
-          break;
-        case ARROW_DN:
-          Serial.println("Following down!");
-          if (throttle_percent >= 0) {
-            throttle_percent -= 10;
-            if (throttle_percent < 10) {
-              throttle_percent = 10;
-            }
-          } else {
-            throttle_percent += 10;
-            if (throttle_percent > -10) {
-              throttle_percent = -10;
-            }
-          }
-          break;
-        case ARROW_LT:
-          steering_percent -= 10;
-          if (steering_percent < -100) {
-            steering_percent = -100;
-          }
-          break;
-        case ARROW_RT:
-          steering_percent += 10;
-          if (steering_percent > 100) {
-            steering_percent = 100;
-          }
-          break;
-        default:
-          Serial.println("Unknown button pressed");
-          break;  
-      } 
-    } else {
-      
-      
+    len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
+  //  if (len == 0) return;
+    if (len > 0) {
+        // Buttons
+      if (packetbuffer[1] == 'B') {
+        uint8_t buttnum = packetbuffer[2] - '0';
+        boolean pressed = packetbuffer[3] - '0';
+        Serial.print ("Button "); Serial.print(buttnum);
+        if (pressed) {
+          isPressed[buttnum] = true;
+          Serial.println(" pressed");
+        } else {
+          isPressed[buttnum] = false;
+          Serial.println(" released");
+        }
+      }
     }
-    
   }
 
+  /* Got a packet! */
+//   printHex(packetbuffer, len);
+
+
+  if (isPressed[BUTTON_1] == true) {
+    Serial.println("Steering centered");
+//    steering_percent = 0;
+    steering_pwm = 1500;
+    isPressed[BUTTON_1] = false;
+  }
+  
+  if (isPressed[BUTTON_FORWARD] == true) { // aka button 2
+    Serial.println("Forward!");
+    if (throttle_pwm < 1500) {
+      throttle_pwm = 1500;
+      isPressed[BUTTON_FORWARD] = false;
+    } else {
+      if (throttle_pwm == 1500) {
+        throttle_pwm = 1750;
+      }
+    }
+//    
+//    if (moving_reverse) {
+//      moving_reverse = false;
+//      throttle_percent = 0;
+//    } else {
+//      moving_forward = true;
+//      if (throttle_percent == 0) {
+//        throttle_percent = 50;
+//      }
+//    }
+  }
+  
+  if (isPressed[BUTTON_3] == true) {
+  }
+
+  if (isPressed[BUTTON_REVERSE] == true) { // button 4
+    Serial.println("Reverse!");
+    if (throttle_pwm > 1500) {
+      throttle_pwm = 1500;
+      isPressed[BUTTON_REVERSE] = false;
+//    if (moving_forward) {
+//      moving_forward = false;
+//      throttle_percent = 0;
+    } else {
+      if (throttle_pwm == 0) {
+        throttle_pwm = 1250;
+      }
+//      moving_reverse = true;
+//      if (throttle_percent == 0) {
+//        throttle_percent = -50;
+//      }
+    }
+  }
+
+  if (isPressed[ARROW_UP] == true) { // button 5
+    Serial.println("Throttling up!");
+    if (throttle_pwm >= 1500) {
+      throttle_pwm += 1;
+      if (throttle_pwm > 2000) {
+        throttle_pwm = 2000;
+      }
+    } else {
+      throttle_pwm -= 1;
+      if (throttle_pwm < 1000) {
+        throttle_pwm = 1000;
+      }
+    }
+
+//    
+//    if (throttle_percent >= 0) {
+//      throttle_percent += 10;
+//      if (throttle_percent > 100) {
+//        throttle_percent = 100;
+//      }
+//    } else {
+//      throttle_percent -= 10;
+//      if (throttle_percent < -100) {
+//        throttle_percent = -100;
+//      }
+//    }
+  }
+
+  if (isPressed[ARROW_DN] == true) { // button 6
+    Serial.println("Following down!");
+    if (throttle_pwm >= 1500) {
+      throttle_pwm -= 1;
+      if (throttle_pwm < 1550) {
+        throttle_pwm = 1550; 
+      } else {
+        throttle_pwm += 1;
+        if (throttle_pwm > 1450) {
+          throttle_pwm = 1450;
+        }
+      }
+    }
+//    if (throttle_percent >= 0) {
+//      throttle_percent -= 10;
+//      if (throttle_percent < 10) {
+//        throttle_percent = 10;
+//      }
+//    } else {
+//      throttle_percent += 10;
+//      if (throttle_percent > -10) {
+//        throttle_percent = -10;
+//      }
+//    }
+  }
+
+  if (isPressed[ARROW_LT] == true) {    // button 7
+    Serial.println("TURNING LEFT");
+    steering_pwm -= 1;
+    if (steering_pwm < 1000) {
+      steering_pwm = 1000;
+    }
+//    steering_percent -= 1;
+//    if (steering_percent < -100) {
+//      steering_percent = -100;
+//    }
+  }
+
+  if (isPressed[ARROW_RT] == true) {    // button 8
+    Serial.println("TURNING RIGHT");
+    steering_pwm += 1;
+    if (steering_pwm > 2000) {
+      steering_pwm = 2000;
+    }
+//    steering_percent += 1;
+//    if (steering_percent > 100) {
+//      steering_percent = 100;
+//    }
+  }
+  
+
   // map(value, fromLow, fromHigh, toLow, toHigh)
-  servo_esc.write(map(throttle_percent, -100, 100, 0, 180));
-  servo_front.write(map(steering_percent, -100, 100, 0, 180));
-  servo_rear.write(map(steering_percent, -100, 100, 180, 0));
+//  servo_esc.write(map(throttle_percent, -100, 100, 0, 180));
+//  servo_front.write(map(steering_percent, -100, 100, 0, 180));
+//  servo_rear.write(map(steering_percent, -100, 100, 180, 0));
+
+//  servo_esc.writeMicroseconds(map(throttle_percent, -100, 100, 1000, 2000));
+//  servo_front.writeMicroseconds(map(steering_percent, -100, 100, 1000, 2000));
+//  servo_rear.writeMicroseconds(map(steering_percent, -100, 100, 2000, 1000));
+
+  servo_esc.writeMicroseconds(throttle_pwm);
+  servo_front.writeMicroseconds(steering_pwm);
+  servo_rear.writeMicroseconds(map(steering_pwm, 1000, 2000, 2000, 1000));
 
   
 }
