@@ -161,8 +161,6 @@ uint8_t len = 0;
 /**************************************************************************/
 void setup(void)
 {
-//  while (!Serial);  // required for Flora & Micro
-//  delay(500);
 
   Serial.begin(115200);
   Serial.println(F("Adafruit Bluefruit App Controller Example"));
@@ -295,6 +293,7 @@ void loop(void)
   }
   
   if (isPressed[BUTTON_3] == true) {
+    // do nothing
   }
 
   if (isPressed[BUTTON_REVERSE] == true) { // button 4
