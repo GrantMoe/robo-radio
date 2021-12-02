@@ -24,4 +24,6 @@ Hardware
   
 Status
 ------
-In progress
+Funtional.
+
+Superceded by [BLE Robocar Controller](https://github.com/GrantMoe/robocar-tx) project.
