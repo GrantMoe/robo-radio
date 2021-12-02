@@ -10,6 +10,9 @@ I happened to have two Adafruit BLE Feather boards sitting around.
 I intend to replace the broken radio board in the transmistter while retaining the preexisting switches/pots/etc.
 
 
+
+
+
 Hardware
 --------
 - Transmitter
@@ -24,6 +27,8 @@ Hardware
   
 Status
 ------
-Funtional.
+https://user-images.githubusercontent.com/4240163/144338041-0b16bfeb-4c04-4201-8244-cfa0a33c41f8.mp4
 
-Superceded by [BLE Robocar Controller](https://github.com/GrantMoe/robocar-tx) project.
+Done! 
+
+Next: [BLE Robocar Controller](https://github.com/GrantMoe/robocar-tx)
